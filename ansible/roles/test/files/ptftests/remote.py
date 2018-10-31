@@ -17,7 +17,7 @@ def get_ifaces():
         iface = line.split(':')[0].strip()
 
         # Skip not FP interfaces
-        if 'eth' not in iface:
+        if 'vlan' not in iface:
             continue
 
         ifaces.append(iface)
@@ -33,6 +33,6 @@ def platform_config_update(config):
     @param config The configuration dictionary to use/update
     """
 
-    remote_port_map = {(0, int(i.replace('eth', ''))) : i for i in get_ifaces()}
+    remote_port_map = {(0, int(i.replace('vlan', ''))) : i for i in get_ifaces()}
     config["port_map"] = remote_port_map.copy()
     config["caps_table_idx"] = 0

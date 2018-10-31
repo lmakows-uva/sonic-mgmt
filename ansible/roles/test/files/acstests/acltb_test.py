@@ -49,6 +49,7 @@ class AclTest(BaseTest):
         '''
         BaseTest.__init__(self)
         self.test_params = testutils.test_params_get()
+
     #---------------------------------------------------------------------
 
     def setUp(self):
@@ -123,14 +124,14 @@ class AclTest(BaseTest):
         self.tests_total = 0
 
         print "\nPort to sent packets to: %d" % src_port
-        print "Destination IP: %s" % dst_ip_blocked
+        print "Destination IP: %s" % dst_ip
         print "Ports to expect packet from: ",
         pprint.pprint(dst_ports)
         print "Dst IP expected to be blocked: ", dst_ip_blocked
 
         pkt0 = simple_tcp_packet(
                                 eth_dst = self.router_mac,
-                                eth_src = self.dataplane.get_mac(0, 0),
+                                eth_src = self.dataplane.get_mac(0, 333),
                                 ip_src = "10.0.0.1",
                                 ip_dst = dst_ip,
                                 tcp_sport = 0x1234,
@@ -139,7 +140,7 @@ class AclTest(BaseTest):
                                 )
         #exp_pkt = pkt.deepcopy()
         exp_pkt0 = simple_tcp_packet(
-                                eth_dst = self.dataplane.get_mac(0, 0),
+                                eth_dst = self.dataplane.get_mac(0, 334),
                                 eth_src = self.router_mac,
                                 ip_src = "10.0.0.1",
                                 ip_dst = dst_ip,
@@ -155,6 +156,7 @@ class AclTest(BaseTest):
         pkt['IP'].src = "10.0.0.2"
         exp_pkt['IP'].src = "10.0.0.2"
         res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+
         tests_passed += (0 if res else 1)
         print "Test #1 %s" % ("FAILED" if res else "PASSED")
 
@@ -188,8 +190,8 @@ class AclTest(BaseTest):
         # Test #5 - Verify ether type match
         pkt = pkt0.copy()
         exp_pkt = exp_pkt0.copy()
-        pkt['Ethernet'].type = 0x1234
-        exp_pkt['Ethernet'].type = 0x1234
+        pkt['Ether'].type = 0x1234
+        exp_pkt['Ether'].type = 0x1234
         res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
         tests_passed += (0 if res else 1)
         print "Test #5 %s" % ("FAILED" if res else "PASSED")
@@ -242,7 +244,7 @@ class AclTest(BaseTest):
 	#Creates a ICMP packet
 	pkt0 = simple_icmp_packet(
                                 eth_dst = self.router_mac,
-                                eth_src = self.dataplane.get_mac(0, 0),
+                                eth_src = self.dataplane.get_mac(0, 333),
                                 ip_src = "10.0.0.1",
                                 ip_dst = dst_ip,
                                 icmp_type=8,
@@ -251,7 +253,7 @@ class AclTest(BaseTest):
                             )
         #exp_pkt = pkt.deepcopy()
         exp_pkt0 = simple_icmp_packet(
-                                eth_dst = self.dataplane.get_mac(0, 0),
+                                eth_dst = self.dataplane.get_mac(0, 334),
                                 eth_src = self.router_mac,
                                 ip_src = "10.0.0.1",
                                 ip_dst = dst_ip,
@@ -273,7 +275,7 @@ class AclTest(BaseTest):
 
         pkt0 = simple_udp_packet(
                                 eth_dst = self.router_mac,
-                                eth_src = self.dataplane.get_mac(0, 0),
+                                eth_src = self.dataplane.get_mac(0, 333),
                                 ip_src = "10.0.0.1",
                                 ip_dst = dst_ip,
                                 udp_sport = 1234,
@@ -282,7 +284,7 @@ class AclTest(BaseTest):
                                 )
         #exp_pkt = pkt.deepcopy()
         exp_pkt0 = simple_udp_packet(
-                                eth_dst = self.dataplane.get_mac(0, 0),
+                                eth_dst = self.dataplane.get_mac(0, 334),
                                 eth_src = self.router_mac,
                                 ip_src = "10.0.0.1",
                                 ip_dst = dst_ip,
@@ -298,6 +300,210 @@ class AclTest(BaseTest):
         exp_pkt['IP'].src = "10.0.0.2"
         pkt['IP'].proto=0x11
         exp_pkt['IP'].proto=0x11
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #13 %s" % ("FAILED" if res else "PASSED")
+
+        return tests_passed, self.tests_total
+
+    #---------------------------------------------------------------------
+
+    def runAclv6Tests(self, dst_ip, dst_ip_blocked, src_port, dst_ports):
+        """
+        @summary: Crete and send packet to verify each ACL rule
+        @return: Number of tests passed
+        """
+
+        tests_passed = 0
+        self.tests_total = 0
+
+
+        #### TEMP #####
+        dst_ip="db9::1"
+        dst_ip_blocked="db9::3"
+
+        ####
+
+        print "\nPort to sent packets to: %d" % src_port
+        print "Destination IPv6: %s" % dst_ip
+        print "Ports to expect packet from: ",
+        pprint.pprint(dst_ports)
+        print "Dst IPv6 expected to be blocked: ", dst_ip_blocked
+
+        src_ipv6 = "db8::2"
+        src_ipv6_ = "db8::3"
+
+        pkt0 = simple_tcpv6_packet(
+                                eth_dst = self.router_mac,
+                                eth_src = self.dataplane.get_mac(0, 333),
+                                ipv6_src = src_ipv6,
+                                ipv6_dst = dst_ip,
+                                tcp_sport = 0x1234,
+                                tcp_dport = 0x50,
+                                ipv6_hlim = 64
+                                )
+        #exp_pkt = pkt.deepcopy()
+        exp_pkt0 = simple_tcpv6_packet(
+                                eth_dst = self.dataplane.get_mac(0, 334),
+                                eth_src = self.router_mac,
+                                ipv6_src = src_ipv6,
+                                ipv6_dst = dst_ip,
+                                tcp_sport = 0x1234,
+                                tcp_dport = 0x50,
+                                ipv6_hlim = 63
+                            )
+
+        print ""
+        # Test #1 - Verify source IPv6 match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['IPv6'].src = src_ipv6
+        exp_pkt['IPv6'].src = src_ipv6
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+
+        tests_passed += (0 if res else 1)
+        print "Test #1 %s" % ("FAILED" if res else "PASSED")
+
+        # Test #2 - Verify destination IPv6 match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['IPv6'].dst = dst_ip_blocked
+        exp_pkt['IPv6'].dst = dst_ip_blocked
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #2 %s" % ("FAILED" if res else "PASSED")
+
+        # Test #3 - Verify L4 source port match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['TCP'].sport = 0x1235
+        exp_pkt['TCP'].sport = 0x1235
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #3 %s" % ("FAILED" if res else "PASSED")
+
+        # Test #4 - Verify L4 destination port match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['TCP'].dport = 0x1235
+        exp_pkt['TCP'].dport = 0x1235
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #4 %s" % ("FAILED" if res else "PASSED")
+
+        # Test #5 - Verify ether type match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['Ether'].type = 0x1234
+        exp_pkt['Ether'].type = 0x1234
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #5 %s" % ("FAILED" if res else "PASSED")
+
+        # Test #6 - Verify ip protocol match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['IPv6'].proto = 0x7E
+        exp_pkt['IPv6'].proto = 0x7E
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #6 %s" % ("FAILED" if res else "PASSED")
+
+        # Test #7 - Verify TCP flags match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['TCP'].flags = 0x12
+        exp_pkt['TCP'].flags = 0x12
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #7 %s" % ("FAILED" if res else "PASSED")
+
+        # Test #9 - Verify source port range match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['TCP'].sport = 0x123A
+        exp_pkt['TCP'].sport = 0x123A
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #9 %s" % ("FAILED" if res else "PASSED")
+
+        # Test #10 - Verify destination port range match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['TCP'].dport = 0x123A
+        exp_pkt['TCP'].dport = 0x123A
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #10 %s" % ("FAILED" if res else "PASSED")
+
+        # Test #11 - Verify rules priority
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['IPv6'].src = src_ipv6_
+        exp_pkt['IPv6'].src = src_ipv6_
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (1 if res else 0)
+        print "Test #11 %s" % ("PASSED" if res else "FAILED")
+
+	#Creates a ICMP packet
+	pkt0 = simple_icmpv6_packet(
+                                eth_dst = self.router_mac,
+                                eth_src = self.dataplane.get_mac(0, 333),
+                                ipv6_src = src_ipv6_,
+                                ipv6_dst = dst_ip,
+                                icmp_type=8,
+                                icmp_code=0,
+                                ipv6_hlim = 64
+                            )
+        #exp_pkt = pkt.deepcopy()
+        exp_pkt0 = simple_icmpv6_packet(
+                                eth_dst = self.dataplane.get_mac(0, 334),
+                                eth_src = self.router_mac,
+                                ipv6_src = src_ipv6_,
+                                ipv6_dst = dst_ip,
+                                icmp_type=8,
+                                icmp_code=0,
+                                ipv6_hlim = 63
+                            )
+							
+        # Test #12 - Verify IPv6 protocol & source IPv6 match
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['IPv6'].src = src_ipv6_
+        exp_pkt['IPv6'].src = src_ipv6_
+        pkt['IPv6'].proto=0x3A
+        exp_pkt['IPv6'].proto=0x3A
+        res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
+        tests_passed += (0 if res else 1)
+        print "Test #12 %s" % ("FAILED" if res else "PASSED")							
+
+        pkt0 = simple_udpv6_packet(
+                                eth_dst = self.router_mac,
+                                eth_src = self.dataplane.get_mac(0, 333),
+                                ipv6_src = src_ipv6,
+                                ipv6_dst = dst_ip,
+                                udp_sport = 1234,
+                                udp_dport = 80,
+                                ipv6_hlim = 64
+                                )
+        #exp_pkt = pkt.deepcopy()
+        exp_pkt0 = simple_udpv6_packet(
+                                eth_dst = self.dataplane.get_mac(0, 334),
+                                eth_src = self.router_mac,
+                                ipv6_src = src_ipv6,
+                                ipv6_dst = dst_ip,
+                                udp_sport = 1234,
+                                udp_dport = 80,
+                                ipv6_hlim = 63
+                                )
+
+        # Test #13 - Verify source IPv6 match - UDP packet and UDP protocol
+        pkt = pkt0.copy()
+        exp_pkt = exp_pkt0.copy()
+        pkt['IPv6'].src = src_ipv6_
+        exp_pkt['IPv6'].src = src_ipv6_
+        pkt['IPv6'].proto=0x11
+        exp_pkt['IPv6'].proto=0x11
         res = self.runSendReceiveTest(pkt, src_port, exp_pkt, dst_ports)
         tests_passed += (0 if res else 1)
         print "Test #13 %s" % ("FAILED" if res else "PASSED")
@@ -330,12 +536,14 @@ class AclTest(BaseTest):
             (tests_passed, tests_total) = self.runAclTests(self.dest_ip_addr_tor, self.dest_ip_addr_tor_blocked, self.spine_ports[0], self.tor_ports)
             assert(tests_passed == tests_total)
         elif self.testbed_type == 't0':
+
             src_port = map(int, self.switch_info[0].rstrip(",\n").split(","))
             dst_ports =  map(int, self.switch_info[1].rstrip(",\n").split(","))
             dst_ip = self.switch_info[2].strip()
             dst_ip_blocked = self.switch_info[3].strip()
 
-            (tests_passed, tests_total) = self.runAclTests(dst_ip, dst_ip_blocked, src_port[0], dst_ports)
+            #(tests_passed, tests_total) = self.runAclTests(dst_ip, dst_ip_blocked, src_port[0], dst_ports)
+            (tests_passed, tests_total) = self.runAclv6Tests(dst_ip, dst_ip_blocked, src_port[0], dst_ports)
             assert(tests_passed == tests_total)
 
 
